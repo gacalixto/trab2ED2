@@ -10,6 +10,15 @@ typedef struct liv
     char  ISBN[14],title[50],author[50],year[5];
     int next;
 } Livro;
+
+typedef struct ind
+{
+    int RRN;
+    char ISBN[14];
+
+
+}INDEX;
+
 int pega_registro(FILE *p_out, char *p_reg);
 void openFile(FILE **fil,char *filname);
 void insertFile(FILE* fil,int user, Livro book);
@@ -26,8 +35,9 @@ int main()
 {
     char opc;
 
-    FILE *file=NULL,*bklist=NULL, *last;
+    FILE *file=NULL,*bklist=NULL, *last,*index;
     char filename[50], booklist[50],lastfile[]="last.bin",defaultfile[]="library.bin";
+    char indexs[20];
     Livro book;
 
     do
@@ -74,6 +84,7 @@ int main()
             system("cls");
             printf("FILE NAME: ");
             gets(filename);
+            filename = strcat(filename,".bin");
             openFile(&file,filename);
             rewind(file);
             last = fopen(lastfile,"w+b");
@@ -153,8 +164,9 @@ int main()
     return 0;
 }
 void openFile(FILE **fil,char *filname)
-{
+{   
 	int init =-1;
+    
     *fil = fopen(filname,"r+b");
 
     if(!*fil)
@@ -185,7 +197,7 @@ void openFile(FILE **fil,char *filname)
         *fil = fopen(filname,"ab");
 
 
-        /*inicia lista de posições disponiveis vázia */
+        /*inicia lista de posiï¿½ï¿½es disponiveis vï¿½zia */
 
         fwrite(&init,sizeof(int),1,*fil);
 
@@ -256,7 +268,7 @@ void insertFile(FILE* fil, int user, Livro book)
     regSize=strlen(book.ISBN) + strlen(book.author) + strlen(book.title) +strlen(book.year); // Soma de todos os tamanhos de strings da STRUCT
     rewind(fil);
 
-	fread(&list,sizeof(int),1,fil);//Recebe primeiro inteiro do arquivo que indica a primeira posição da lista (-1 se a lista estiver vazia)
+	fread(&list,sizeof(int),1,fil);//Recebe primeiro inteiro do arquivo que indica a primeira posiï¿½ï¿½o da lista (-1 se a lista estiver vazia)
 
     if(list==-1)
     {
@@ -270,7 +282,7 @@ void insertFile(FILE* fil, int user, Livro book)
     {
 
 
-        /*BUSCA DE POSIÇÕES DISPONIVEIS*/
+        /*BUSCA DE POSIï¿½ï¿½ES DISPONIVEIS*/
         //implementar
 
     }
@@ -284,16 +296,16 @@ void insertFile(FILE* fil, int user, Livro book)
 void hashSfile(FILE *fil,int size_data,Livro book,int old)
 {
 
-    /******** Essa função tem como único e exclusivo Objetivo gravar um dado de um livro
+    /******** Essa funï¿½ï¿½o tem como ï¿½nico e exclusivo Objetivo gravar um dado de um livro
     no arquivo,
 
     int size_data = Tamanho total da soma de strings da struct
     Livro book = struct livro
-    int old = indica se é uma nova gravação ou uma REgravação
+    int old = indica se ï¿½ uma nova gravaï¿½ï¿½o ou uma REgravaï¿½ï¿½o
 
-    obs: se for regravação os primeiros bytes que indicam o tamanho da posição não mudam
+    obs: se for regravaï¿½ï¿½o os primeiros bytes que indicam o tamanho da posiï¿½ï¿½o nï¿½o mudam
 
-    Exemplo de gravação:
+    Exemplo de gravaï¿½ï¿½o:
 
     -1 (size_data + 4)(ISBN)#(Titulo)#(Autor)#(Ano)|
 
@@ -304,7 +316,7 @@ void hashSfile(FILE *fil,int size_data,Livro book,int old)
 
     if(!old)
     {
-        //fprintf(fil,"%d",size_data+4);isso aqui não estava funcionando, o fseek nao conseguia pular isso por algum motivo
+        //fprintf(fil,"%d",size_data+4);isso aqui nï¿½o estava funcionando, o fseek nao conseguia pular isso por algum motivo
         size_data=size_data+4;
         fwrite(&size_data,sizeof(int),1,fil);
     }
@@ -330,8 +342,8 @@ void hashSfile(FILE *fil,int size_data,Livro book,int old)
 }
 int searchRegister(FILE *fil,char *ISBN)
 {
-    /*Função para percorrer o arquivo e encontrar o ISBN desejado
-        que retorna um número equivalente à posição do registro
+    /*Funï¿½ï¿½o para percorrer o arquivo e encontrar o ISBN desejado
+        que retorna um nï¿½mero equivalente ï¿½ posiï¿½ï¿½o do registro
     */
     int pos,count=0,ct,list,achou=0,tamreg,tamcampo,ptnext;
     char registro[60],campo[26],cha;
@@ -368,7 +380,7 @@ void removeFile(char *filename)
     FILE* fil;
 
     fil=fopen(filename,"r+b");
-    if(!fil) printf("lokão");
+    if(!fil) printf("lokï¿½o");
 
     printf("ISBN:");
     gets(ISBN);
@@ -394,7 +406,7 @@ void removeFile(char *filename)
     	fwrite(&proc,sizeof(int),1,fil);
     	printf("ISBN found! \n Press any key to continue");
         getch();
-        //fwrite('*',sizeof(char),1,fil);//isso não está funcionando ainda
+        //fwrite('*',sizeof(char),1,fil);//isso nï¿½o estï¿½ funcionando ainda
         rewind(fil);
         //fprintf(fil,"%d ",proc);
 
@@ -496,7 +508,7 @@ void print_book(Livro book){
 
 int positInfile(FILE *fil, int position){
 
-	//Essa Função Recebe uma posição e anda no arquivo até encontrar a posição
+	//Essa Funï¿½ï¿½o Recebe uma posiï¿½ï¿½o e anda no arquivo atï¿½ encontrar a posiï¿½ï¿½o
 
 	int bytes,i=0,end;
 	rewind(fil);
