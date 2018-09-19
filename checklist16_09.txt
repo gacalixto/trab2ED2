@@ -1,0 +1,6 @@
+-Criar struct index
+°criar arquivo index
+°criar função percorrer índice
+°Função procurar no índice (carregar indice na memória)
+
+
