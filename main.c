@@ -255,6 +255,7 @@ void dumpFile(FILE *fil)
 
 void insertFile(FILE* fil,FILE *index, int user, Livro book)
 {
+    INDEX indstr[tam];
 
     int regSize,list,quant_reg;
     rewind(fil);
@@ -301,6 +302,9 @@ void insertFile(FILE* fil,FILE *index, int user, Livro book)
 
 }
 
+void orderIndex(INDEX indexstr,FILE *index){
+    
+}
 
 void hashSfile(FILE *fil,int size_data,Livro book,int old)
 {
