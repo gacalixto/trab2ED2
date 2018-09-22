@@ -21,11 +21,10 @@ typedef struct ind
 
 int pega_registro(FILE *p_out, char *p_reg);
 void openFile(FILE **fil,char *filname,char *stringmod);
-void insertFile(FILE* fil,FILE *index,int user, Livro book);
+void insertRegister(FILE* fil,FILE *index,int user, Livro book);
 void dumpFile(FILE *fil);
 void hashSfile(FILE *fil,int size_data,Livro book,int old);
 void read_booklist(FILE *fil,FILE *index, FILE *bklist);
-void removeFile(char *filename);
 int searchRegister(FILE*fil,char *ISBN);
 char* init_string(char *str, char w, int tama);
 void print_book(Livro book);
@@ -46,7 +45,7 @@ int main()
         system("COLOR 0A");
         system("cls");
         printf("LIBRARY FILE MANAGER\n\n\n");
-        printf(" [1]-INSERT INTO FILE\n\n [3]-Remove a register from the file\n\n [4]-Load FILE\n\n [5]-Dump FILE \n\n [6]-Load Book List \n\n [r]-Open Last File\n\n [e]-Close FILE & exit \n");
+        printf(" [1]-INSERT INTO FILE\n\n [3]-Search a register\n\n [4]-Load FILE\n\n [5]-Dump FILE \n\n [6]-Load Book List \n\n [r]-Open Last File\n\n [e]-Close FILE & exit \n");
         opc=getch();
 
         switch(opc)
@@ -56,7 +55,7 @@ int main()
             if(file)
             {
 
-                insertFile(file,index,1,book);
+                insertRegister(file,index,1,book);
                 break;
             }
             system("cls");
@@ -64,7 +63,7 @@ int main()
             getch();
             break;
 
-        case '3':
+        /*case '3':
             system("cls");
             if(file)
             {
@@ -80,6 +79,7 @@ int main()
             }
             system("cls");
             break;
+            */
         case '4':
             system("cls");
             printf("FILE NAME: ");
@@ -100,6 +100,9 @@ int main()
             break;
 
         case '5':
+            printf("FILE NAME: ");
+            gets(filename);
+            openFile(&file,filename,"a+b");
             if(file)
                 dumpFile(file);
             else{
@@ -253,13 +256,20 @@ void dumpFile(FILE *fil)
 
 }
 
-void insertFile(FILE* fil,FILE *index, int user, Livro book)
+void insertRegister(FILE* fil,FILE *index, int user, Livro book)
 {
     INDEX indstr[tam];
 
-    int regSize,list,quant_reg;
+    int regSize,list,quant_reg,i,rrnatual;
     rewind(fil);
-    fread(&quant_reg,sizeof(int),1,index);
+    fread(&quant_reg,sizeof(int),1,index);//lê quantidade de registros presentes no INDEX
+    /* FOR usado pra carregar o vetor de struct de indices*/
+    for(i=0;i<quant_reg;i++){
+        fread(indstr[i].ISBN,sizeof(indstr[i].ISBN),1,index);
+        fread(indstr[i].RRN,sizeof(indstr[i].RRN),1,index);            
+    }
+    /**/
+    rrnatual=quant_reg+1;
 
 
 
@@ -276,33 +286,42 @@ void insertFile(FILE* fil,FILE *index, int user, Livro book)
         gets(book.year);
     }
     regSize=strlen(book.ISBN) + strlen(book.author) + strlen(book.title) +strlen(book.year); // Soma de todos os tamanhos de strings da STRUCT
+    strcpy(indstr[rrnatual].ISBN,book.ISBN);
+    indstr[rrnatual].RRN = rrnatual;
+    orderIndex(indstr,rrnatual);
+    rewind(index);
+    quant_reg++;
+    fwrite(&quant_reg,sizeof(int),1,index);    
+    for(i=0;i<quant_reg;i++){
+        fwrite(&indstr[i].ISBN,sizeof(indstr[i].ISBN),1,index);
+        fwrite(&indstr[i].RRN,sizeof(indstr[i].RRN),1,index);            
+    }
     rewind(fil);
-
-	fread(&list,sizeof(int),1,fil);//Recebe primeiro inteiro do arquivo que indica a primeira posi��o da lista (-1 se a lista estiver vazia)
-
-   
-        printf("Livro Salvo\n !!\a");
-
-        fseek(fil,SEEK_END-SEEK_CUR,SEEK_CUR); //Rola para o fim do arquivo atual
-        hashSfile(fil,regSize,book,0);
-        fwrite(&quant_reg,sizeof(int),1,index);
-        fputs(book.ISBN,index);
-        rewind(index);
-        rewind(fil);
-        quant_reg++;
-        fwrite(&quant_reg,sizeof(int),1,index);
-        fwrite(&quant_reg,sizeof(int),1,index);
-
-
-        return;
-
-   
-
-
-
+	fread(&list,sizeof(int),1,fil);//Recebe primeiro inteiro do arquivo que indica a quantidade de registros do arquivo de dados
+    fseek(fil,SEEK_END-SEEK_CUR,SEEK_CUR); //Rola para o fim do arquivo atual
+    hashSfile(fil,regSize,book,0);
+    rewind(index);
+    rewind(fil);
+    printf("Livro Salvo\n !!\a");
+    return;
 }
 
-void orderIndex(INDEX indexstr,FILE *index){
+void orderIndex(INDEX *indexstr,int quantd_reg){
+
+    /** Essa função serve para gravar um novo ISBN e RRN no arquivo de índice de forma ordenada!*/ 
+    int i,j;
+    INDEX tmp;
+     for(i=0;i<quantd_reg-1;i++){
+          for(j=i+1;j<quantd_reg;j++){
+              if(strcmp(indexstr[i].ISBN,indexstr[j].ISBN)>0)
+              {
+                  tmp = indexstr[i];
+                  indexstr[i]=indexstr[j];
+                  indexstr[j] = tmp;
+              }
+
+          }      
+        }
     
 }
 
@@ -386,55 +405,8 @@ int searchRegister(FILE *fil,char *ISBN)
 }
 
 
-void removeFile(char *filename)
-{
-    char ISBN[14],reg[60],*stringnull;
-    int proc=0,bytesproc=0,firstposition;
-    FILE* fil;
-
-    fil=fopen(filename,"r+b");
-    if(!fil) printf("lok�o");
-
-    printf("ISBN:");
-    gets(ISBN);
-
-    proc = searchRegister(fil,ISBN);
-
-    if(proc!=-2)
-    {
-        rewind(fil);
-    	fread(&firstposition,sizeof(int),1,fil);
-    	rewind(fil);
-    	bytesproc= positInfile(fil,proc,0);
-    	stringnull = (char*)malloc(sizeof(char)*(bytesproc-5));
-
-    	init_string(stringnull,'.',bytesproc-5);
 
 
-        fputc('*',fil);
-        fwrite(&firstposition,sizeof(int),1,fil);
-
-    	fwrite(stringnull,sizeof(stringnull),1,fil);
-    	rewind(fil);
-    	fwrite(&proc,sizeof(int),1,fil);
-    	printf("ISBN found! \n Press any key to continue");
-        getch();
-        //fwrite('*',sizeof(char),1,fil);//isso n�o est� funcionando ainda
-        rewind(fil);
-        //fprintf(fil,"%d ",proc);
-
-    }
-    else
-    {
-        printf("ISBN not found!\nPress any key to continue");
-        getch();
-    }
-
-
-    fclose(fil);
-
-
-}
 
 int pega_registro(FILE *p_out, char *p_reg)
 {
@@ -481,7 +453,7 @@ void read_booklist(FILE *fil,FILE *index,FILE *bklist)
         fread(book.title,sizeof(book.title),1,bklist);
         fread(book.author,sizeof(book.author),1,bklist);
         fread(book.year,sizeof(book.year),1,bklist);
-        insertFile(fil,index,0,book);
+        insertRegister(fil,index,0,book);
 
 		print_book(book);
 
