@@ -21,10 +21,10 @@ typedef struct ind
 
 int pega_registro(FILE *p_out, char *p_reg);
 void openFile(FILE **fil,char *filname,char *stringmod);
-void insertRegister(FILE* fil,FILE *index,int user, Livro book);
+void insertRegister(FILE* fil,FILE *index,int user, Livro book, char *indexN);
 void dumpFile(FILE *fil);
 void hashSfile(FILE *fil,int size_data,Livro book,int old);
-void read_booklist(FILE *fil,FILE *index, FILE *bklist);
+void read_booklist(FILE *fil,FILE *index,FILE *bklist, char *indexN);
 int searchRegister(FILE*fil,char *ISBN);
 char* init_string(char *str, char w, int tama);
 void print_book(Livro book);
@@ -55,7 +55,7 @@ int main()
             if(file)
             {
 
-                insertRegister(file,index,1,book);
+                insertRegister(file,index,1,book,indexs);
                 break;
             }
             system("cls");
@@ -124,7 +124,7 @@ int main()
 
                 rewind(bklist);
                 rewind(file);
-                read_booklist(file,index,bklist);
+                read_booklist(file,index,bklist,indexs);
                 fclose(bklist);
 
 
@@ -256,20 +256,33 @@ void dumpFile(FILE *fil)
 
 }
 
-void insertRegister(FILE* fil,FILE *index, int user, Livro book)
+void insertRegister(FILE* fil,FILE *index, int user, Livro book, char *indexN)
 {
     INDEX indstr[tam];
 
     int regSize,list,quant_reg,i,rrnatual;
     rewind(fil);
-    fread(&quant_reg,sizeof(int),1,index);//lê quantidade de registros presentes no INDEX
+    rewind(index);
+    fread(&quant_reg,sizeof(int),1,index);
+    printf("  %d  \n",quant_reg);//lê quantidade de registros presentes no INDEX
     /* FOR usado pra carregar o vetor de struct de indices*/
     for(i=0;i<quant_reg;i++){
         fread(indstr[i].ISBN,sizeof(indstr[i].ISBN),1,index);
-        fread(indstr[i].RRN,sizeof(indstr[i].RRN),1,index);            
+        fread(&indstr[i].RRN,sizeof(indstr[i].RRN),1,index); 
+        /*printtest*/
+        
+        fseek(index,1,SEEK_CUR);           
     }
+    getch();
     /**/
-    rrnatual=quant_reg+1;
+    rrnatual=quant_reg;
+    //APAGANDO ARQUIVO
+    fclose(index);
+    index = fopen(indexN,"wb");
+    fclose(index);
+    index = fopen(indexN,"a+b");
+    
+
 
 
 
@@ -288,17 +301,21 @@ void insertRegister(FILE* fil,FILE *index, int user, Livro book)
     regSize=strlen(book.ISBN) + strlen(book.author) + strlen(book.title) +strlen(book.year); // Soma de todos os tamanhos de strings da STRUCT
     strcpy(indstr[rrnatual].ISBN,book.ISBN);
     indstr[rrnatual].RRN = rrnatual;
-    orderIndex(indstr,rrnatual);
+    //orderIndex(indstr,rrnatual);
     rewind(index);
     quant_reg++;
-    fwrite(&quant_reg,sizeof(int),1,index);    
+    fwrite(&quant_reg,sizeof(int),1,index); 
+   
     for(i=0;i<quant_reg;i++){
-        fwrite(&indstr[i].ISBN,sizeof(indstr[i].ISBN),1,index);
-        fwrite(&indstr[i].RRN,sizeof(indstr[i].RRN),1,index);            
+        fwrite(indstr[i].ISBN,sizeof(indstr[i].ISBN),1,index);
+        fwrite(&indstr[i].RRN,sizeof(indstr[i].RRN),1,index);
+        fputc('|',index);
+        printf("%s  %d \n",indstr[i].ISBN,indstr[i].RRN);
+
     }
     rewind(fil);
 	fread(&list,sizeof(int),1,fil);//Recebe primeiro inteiro do arquivo que indica a quantidade de registros do arquivo de dados
-    fseek(fil,SEEK_END-SEEK_CUR,SEEK_CUR); //Rola para o fim do arquivo atual
+    fseek(fil,SEEK_END,SEEK_CUR); //Rola para o fim do arquivo atual
     hashSfile(fil,regSize,book,0);
     rewind(index);
     rewind(fil);
@@ -441,7 +458,7 @@ int get_field(char *p_registro, int *p_pos, char *p_campo)
     return strlen(p_campo);
 }
 
-void read_booklist(FILE *fil,FILE *index,FILE *bklist)
+void read_booklist(FILE *fil,FILE *index,FILE *bklist, char *indexN)
 {
 
     Livro book;
@@ -453,7 +470,7 @@ void read_booklist(FILE *fil,FILE *index,FILE *bklist)
         fread(book.title,sizeof(book.title),1,bklist);
         fread(book.author,sizeof(book.author),1,bklist);
         fread(book.year,sizeof(book.year),1,bklist);
-        insertRegister(fil,index,0,book);
+        insertRegister(fil,index,0,book,indexN);
 
 		print_book(book);
 
