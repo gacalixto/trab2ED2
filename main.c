@@ -29,6 +29,7 @@ int searchRegister(FILE*fil,char *ISBN);
 char* init_string(char *str, char w, int tama);
 void print_book(Livro book);
 int positInfile(FILE *fil, int position, int offset);
+void orderIndex(INDEX *indexstr,int quantd_reg);
 
 int main()
 {
@@ -301,7 +302,7 @@ void insertRegister(FILE* fil,FILE *index, int user, Livro book, char *indexN)
     regSize=strlen(book.ISBN) + strlen(book.author) + strlen(book.title) +strlen(book.year); // Soma de todos os tamanhos de strings da STRUCT
     strcpy(indstr[rrnatual].ISBN,book.ISBN);
     indstr[rrnatual].RRN = rrnatual;
-    //orderIndex(indstr,rrnatual);
+    orderIndex(indstr,rrnatual);
     rewind(index);
     quant_reg++;
     fwrite(&quant_reg,sizeof(int),1,index); 
@@ -339,7 +340,7 @@ void orderIndex(INDEX *indexstr,int quantd_reg){
 
           }      
         }
-    
+    for(i=0;i<quantd_reg;i++) printf("%s",indexstr[i].ISBN);
 }
 
 void hashSfile(FILE *fil,int size_data,Livro book,int old)
