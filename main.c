@@ -30,6 +30,9 @@ char* init_string(char *str, char w, int tama);
 void print_book(Livro book);
 int positInfile(FILE *fil, int position, int offset);
 void orderIndex(INDEX *indexstr,int quantd_reg);
+void searchByindex(FILE *fil, FILE *index , char *ISBN);
+INDEX *bufferindex(FILE *index);
+
 
 int main()
 {
@@ -112,6 +115,7 @@ int main()
             }
             getch();
             system("cls");
+            fclose(file);
             break;
 
         case '6':
@@ -262,7 +266,7 @@ void insertRegister(FILE* fil,FILE *index, int user, Livro book, char *indexN)
     INDEX indstr[tam];
 
     int regSize,list,quant_reg,i,rrnatual;
-    rewind(fil);
+   
     rewind(index);
     fread(&quant_reg,sizeof(int),1,index);
     printf("  %d  \n",quant_reg);//lê quantidade de registros presentes no INDEX
@@ -275,7 +279,8 @@ void insertRegister(FILE* fil,FILE *index, int user, Livro book, char *indexN)
         fseek(index,1,SEEK_CUR);           
     }
     getch();
-    /**/
+    rewind(fil);
+     /**/
     rrnatual=quant_reg;
     //APAGANDO ARQUIVO
     fclose(index);
@@ -302,9 +307,11 @@ void insertRegister(FILE* fil,FILE *index, int user, Livro book, char *indexN)
     regSize=strlen(book.ISBN) + strlen(book.author) + strlen(book.title) +strlen(book.year); // Soma de todos os tamanhos de strings da STRUCT
     strcpy(indstr[rrnatual].ISBN,book.ISBN);
     indstr[rrnatual].RRN = rrnatual;
+     quant_reg++;
+     rrnatual = quant_reg;
     orderIndex(indstr,rrnatual);
     rewind(index);
-    quant_reg++;
+    
     fwrite(&quant_reg,sizeof(int),1,index); 
    
     for(i=0;i<quant_reg;i++){
@@ -341,6 +348,7 @@ void orderIndex(INDEX *indexstr,int quantd_reg){
           }      
         }
     for(i=0;i<quantd_reg;i++) printf("%s",indexstr[i].ISBN);
+    getch();
 }
 
 void hashSfile(FILE *fil,int size_data,Livro book,int old)
@@ -512,6 +520,8 @@ void print_book(Livro book){
 int positInfile(FILE *fil, int position,int offset){
 
 	//Essa Fun��o Recebe uma posi��o e anda no arquivo at� encontrar a posi��o
+    //OFFSET =O REGISTRO VARIÁVEL; 
+    //OFFSET > 0 REGISTRO FIXO;
 
 	int INTAUX,i=0,end;
 	rewind(fil);
@@ -539,5 +549,21 @@ int positInfile(FILE *fil, int position,int offset){
 
 
 
+
+}
+
+void searchByindex(FILE *fil, FILE *index , char *ISBN){
+
+        system("cls");
+        printf("Type the ISBN: ");
+        gets(ISBN);
+
+
+    
+}
+
+INDEX *bufferindex(FILE *index){
+
+    
 
 }
