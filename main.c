@@ -21,14 +21,18 @@ typedef struct ind
 
 int pega_registro(FILE *p_out, char *p_reg);
 void openFile(FILE **fil,char *filname,char *stringmod);
-void insertRegister(FILE* fil,FILE *index,int user, Livro book);
+void insertRegister(FILE* fil,FILE *index,int user, Livro book, char *indexN);
 void dumpFile(FILE *fil);
 void hashSfile(FILE *fil,int size_data,Livro book,int old);
-void read_booklist(FILE *fil,FILE *index, FILE *bklist);
+void read_booklist(FILE *fil,FILE *index,FILE *bklist, char *indexN);
 int searchRegister(FILE*fil,char *ISBN);
 char* init_string(char *str, char w, int tama);
 void print_book(Livro book);
 int positInfile(FILE *fil, int position, int offset);
+void orderIndex(INDEX *indexstr,int quantd_reg);
+void searchByindex(FILE *fil, FILE *index);
+void bufferindex(FILE *index, int *quantd_reg, INDEX *indstr);
+
 
 int main()
 {
@@ -45,7 +49,7 @@ int main()
         system("COLOR 0A");
         system("cls");
         printf("LIBRARY FILE MANAGER\n\n\n");
-        printf(" [1]-INSERT INTO FILE\n\n [3]-Search a register\n\n [4]-Load FILE\n\n [5]-Dump FILE \n\n [6]-Load Book List \n\n [r]-Open Last File\n\n [e]-Close FILE & exit \n");
+        printf(" [1]-INSERT INTO FILE\n [2] - Search\n [3]-Search a register\n [4]-Load FILE\n [5]-Dump FILE \n [6]-Load Book List \n [r]-Open Last File\n [e]-Close FILE & exit \n");
         opc=getch();
 
         switch(opc)
@@ -55,7 +59,7 @@ int main()
             if(file)
             {
 
-                insertRegister(file,index,1,book);
+                insertRegister(file,index,1,book,indexs);
                 break;
             }
             system("cls");
@@ -63,6 +67,18 @@ int main()
             getch();
             break;
 
+        case '2':
+            system("cls");
+          if(file && index){
+
+            searchByindex(file,index);
+          }else{
+
+              printf("Please Open File...");
+
+          }
+          getch();
+        break;
         /*case '3':
             system("cls");
             if(file)
@@ -111,6 +127,7 @@ int main()
             }
             getch();
             system("cls");
+            fclose(file);
             break;
 
         case '6':
@@ -124,7 +141,7 @@ int main()
 
                 rewind(bklist);
                 rewind(file);
-                read_booklist(file,index,bklist);
+                read_booklist(file,index,bklist,indexs);
                 fclose(bklist);
 
 
@@ -256,20 +273,24 @@ void dumpFile(FILE *fil)
 
 }
 
-void insertRegister(FILE* fil,FILE *index, int user, Livro book)
+void insertRegister(FILE* fil,FILE *index, int user, Livro book, char *indexN)
 {
     INDEX indstr[tam];
+    int quant_reg=0;
+    int regSize,list,i,rrnatual;
 
-    int regSize,list,quant_reg,i,rrnatual;
+    bufferindex(index,&quant_reg,indstr);
+    getch();
     rewind(fil);
-    fread(&quant_reg,sizeof(int),1,index);//lê quantidade de registros presentes no INDEX
-    /* FOR usado pra carregar o vetor de struct de indices*/
-    for(i=0;i<quant_reg;i++){
-        fread(indstr[i].ISBN,sizeof(indstr[i].ISBN),1,index);
-        fread(indstr[i].RRN,sizeof(indstr[i].RRN),1,index);            
-    }
-    /**/
-    rrnatual=quant_reg+1;
+     /**/
+    rrnatual=quant_reg;
+    //APAGANDO ARQUIVO
+    fclose(index);
+    index = fopen(indexN,"wb");
+    fclose(index);
+    index = fopen(indexN,"a+b");
+    
+
 
 
 
@@ -288,17 +309,23 @@ void insertRegister(FILE* fil,FILE *index, int user, Livro book)
     regSize=strlen(book.ISBN) + strlen(book.author) + strlen(book.title) +strlen(book.year); // Soma de todos os tamanhos de strings da STRUCT
     strcpy(indstr[rrnatual].ISBN,book.ISBN);
     indstr[rrnatual].RRN = rrnatual;
+     quant_reg++;
+     rrnatual = quant_reg;
     orderIndex(indstr,rrnatual);
     rewind(index);
-    quant_reg++;
-    fwrite(&quant_reg,sizeof(int),1,index);    
+    
+    fwrite(&quant_reg,sizeof(int),1,index); 
+   
     for(i=0;i<quant_reg;i++){
-        fwrite(&indstr[i].ISBN,sizeof(indstr[i].ISBN),1,index);
-        fwrite(&indstr[i].RRN,sizeof(indstr[i].RRN),1,index);            
+        fwrite(indstr[i].ISBN,sizeof(indstr[i].ISBN),1,index);
+        fwrite(&indstr[i].RRN,sizeof(indstr[i].RRN),1,index);
+        fputc('|',index);
+        printf("%s  %d \n",indstr[i].ISBN,indstr[i].RRN);
+
     }
     rewind(fil);
 	fread(&list,sizeof(int),1,fil);//Recebe primeiro inteiro do arquivo que indica a quantidade de registros do arquivo de dados
-    fseek(fil,SEEK_END-SEEK_CUR,SEEK_CUR); //Rola para o fim do arquivo atual
+    fseek(fil,SEEK_END,SEEK_CUR); //Rola para o fim do arquivo atual
     hashSfile(fil,regSize,book,0);
     rewind(index);
     rewind(fil);
@@ -322,7 +349,8 @@ void orderIndex(INDEX *indexstr,int quantd_reg){
 
           }      
         }
-    
+    for(i=0;i<quantd_reg;i++) printf("%s",indexstr[i].ISBN);
+    getch();
 }
 
 void hashSfile(FILE *fil,int size_data,Livro book,int old)
@@ -429,7 +457,7 @@ int get_field(char *p_registro, int *p_pos, char *p_campo)
     p_campo[i] = '\0';
 
     ch = p_registro[*p_pos];
-    while ((ch != '#') && (ch!=EOF))
+    while ((ch != '#') && (ch!=EOF) && ch!='|')
     {
         p_campo[i] = ch;
         i++;
@@ -441,7 +469,7 @@ int get_field(char *p_registro, int *p_pos, char *p_campo)
     return strlen(p_campo);
 }
 
-void read_booklist(FILE *fil,FILE *index,FILE *bklist)
+void read_booklist(FILE *fil,FILE *index,FILE *bklist, char *indexN)
 {
 
     Livro book;
@@ -453,7 +481,7 @@ void read_booklist(FILE *fil,FILE *index,FILE *bklist)
         fread(book.title,sizeof(book.title),1,bklist);
         fread(book.author,sizeof(book.author),1,bklist);
         fread(book.year,sizeof(book.year),1,bklist);
-        insertRegister(fil,index,0,book);
+        insertRegister(fil,index,0,book,indexN);
 
 		print_book(book);
 
@@ -494,6 +522,8 @@ void print_book(Livro book){
 int positInfile(FILE *fil, int position,int offset){
 
 	//Essa Fun��o Recebe uma posi��o e anda no arquivo at� encontrar a posi��o
+    //OFFSET =O REGISTRO VARIÁVEL; 
+    //OFFSET > 0 REGISTRO FIXO;
 
 	int INTAUX,i=0,end;
 	rewind(fil);
@@ -522,4 +552,110 @@ int positInfile(FILE *fil, int position,int offset){
 
 
 
+}
+
+void searchByindex(FILE *fil, FILE *index){
+         char ISBN[13],reg[65],campo[50];
+        INDEX indstr[tam];
+        int quant_reg,i,flag=1,j,tamreg,tamcamp,pos=0;
+        Livro book;
+        system("cls");
+        printf("Type the ISBN: ");
+        gets(ISBN);
+
+        bufferindex(index,&quant_reg,indstr);
+
+        system("cls");
+
+        printf("A - primary search \nB - Secondary search\n EXIT -  ANY KEY");
+
+        switch(toupper(getch())){
+
+            case 'A':
+
+                i=0;
+                while(i<quant_reg && flag ) {
+
+                    flag=strcmp(ISBN,indstr[i].ISBN);
+                    j=i;
+                    i++;
+
+                }
+                system("cls");
+                if(!flag) {
+
+                    
+                    positInfile(fil,indstr[j].RRN,0);
+                    fseek(fil,-4,SEEK_CUR);
+
+                    
+                    
+                    tamreg = pega_registro(fil,reg);
+                    
+                    system("cls");
+                    pos = 0;
+                    tamcamp = get_field(reg,&pos,campo);
+                    printf("ISBN: %s\n",campo);
+                    tamcamp = get_field(reg,&pos,campo);
+                    printf("Title: %s\n",campo);
+                    tamcamp = get_field(reg,&pos,campo);
+                    printf("Author: %s\n",campo);
+                    tamcamp = get_field(reg,&pos,campo);
+                    printf("Year: %s\n",campo);
+
+
+
+
+                    
+                  
+                    printf("\n\n\n Size: %d bytes",tamreg);
+                    rewind(fil);
+                    
+
+                }else{
+
+                    printf("Book Not Found");
+
+                }
+
+
+            break;
+
+            case 'B':
+
+                //SECONDARY SEARCH;
+
+            break;
+
+
+
+
+
+        }
+
+
+
+    
+}
+
+void bufferindex(FILE *index, int *quantd_reg, INDEX *indstr){
+
+    
+    int i;
+
+    
+   
+    rewind(index);
+    fread(quantd_reg,sizeof(int),1,index);
+    
+    printf("loaded  %d registers \n",*quantd_reg);//lê quantidade de registros presentes no INDEX
+    /* FOR usado pra carregar o vetor de struct de indices*/
+    for(i=0;i<*quantd_reg;i++){
+        fread(indstr[i].ISBN,sizeof(indstr[i].ISBN),1,index);
+        fread(&indstr[i].RRN,sizeof(indstr[i].RRN),1,index); 
+        /*printtest*/
+        
+        fseek(index,1,SEEK_CUR);           
+    }
+    
 }
