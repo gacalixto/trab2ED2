@@ -13,18 +13,28 @@ typedef struct liv
 
 typedef struct ind
 {
-    int RRN;
+    int RRN,NEXT;
     char ISBN[14];
 
 
 }INDEX;
 
+typedef struct aut{
+
+    char NAME[50];
+    int RRN;
+    
+
+}AUTHOR;
+
+
+
 int pega_registro(FILE *p_out, char *p_reg);
 void openFile(FILE **fil,char *filname,char *stringmod);
-void insertRegister(FILE* fil,FILE *index,int user, Livro book, char *indexN);
+void insertRegister(FILE* fil,FILE *index,FILE *index2,FILE *indexA, int user, Livro book, char *indexN,char*indexN2,char *indexN3);
 void dumpFile(FILE *fil);
 void hashSfile(FILE *fil,int size_data,Livro book,int old);
-void read_booklist(FILE *fil,FILE *index,FILE *bklist, char *indexN);
+void read_booklist(FILE *fil,FILE *index,FILE *index2, FILE *indexA,FILE *bklist, char *indexN,char *indexN2,char *indexN3);
 int searchRegister(FILE*fil,char *ISBN);
 char* init_string(char *str, char w, int tama);
 void print_book(Livro book);
@@ -32,15 +42,15 @@ int positInfile(FILE *fil, int position, int offset);
 void orderIndex(INDEX *indexstr,int quantd_reg);
 void searchByindex(FILE *fil, FILE *index);
 void bufferindex(FILE *index, int *quantd_reg, INDEX *indstr);
-
+void bufferindexA(FILE *indexA, int *quantd,AUTHOR *LIST);
 
 int main()
 {
     char opc;
 
-    FILE *file=NULL,*bklist=NULL, *last,*index;
+    FILE *file=NULL,*bklist=NULL, *last,*index,*index2,*indexA;
     char filename[50], booklist[]="biblioteca.bin",lastfile[]="last.bin",defaultfile[]="library.bin";
-    char indexs[20],a[10];
+    char indexs[20],a[10],indexs2[20],indexs3[20];
     Livro book;
 
     do
@@ -59,7 +69,7 @@ int main()
             if(file)
             {
 
-                insertRegister(file,index,1,book,indexs);
+                insertRegister(file,index,index2,indexA,1,book,indexs,index2,indexs3);
                 break;
             }
             system("cls");
@@ -101,12 +111,25 @@ int main()
             printf("FILE NAME: ");
             gets(filename);
             strcpy(indexs,filename);
-             strcat(filename,".bin");
+             
              strcat(indexs,"_IND");
              strcat(indexs,".bin");
+             openFile(&index,indexs,"a+b");
+            strcpy(indexs,filename);
+             strcat(indexs,"_A");
+             strcat(indexs,".bin");
+             strcpy(indexs2,indexs);
+             openFile(&indexA,indexs,"a+b");
+            strcpy(indexs,filename);
+             strcat(indexs,"_IND2");
+             strcat(indexs,".bin");
+             strcpy(indexs3,indexs);
+             openFile(&index2,indexs,"a+b");
+
+             strcat(filename,".bin");
             
             openFile(&file,filename,"a+b");
-            openFile(&index,indexs,"a+b");
+            
             rewind(file);
             rewind(index);
             last = fopen(lastfile,"w+b");
@@ -141,7 +164,7 @@ int main()
 
                 rewind(bklist);
                 rewind(file);
-                read_booklist(file,index,bklist,indexs);
+                read_booklist(file,index,index2,indexA,bklist,indexs,indexs2,indexs3);
                 fclose(bklist);
 
 
@@ -187,6 +210,9 @@ int main()
     }
     while(opc!='e');
     fclose(file);
+    fclose(index);
+    fclose(indexA);
+    fclose(index2);
     return 0;
 }
 void openFile(FILE **fil,char *filname, char *stringmod)
@@ -273,13 +299,18 @@ void dumpFile(FILE *fil)
 
 }
 
-void insertRegister(FILE* fil,FILE *index, int user, Livro book, char *indexN)
+void insertRegister(FILE* fil,FILE *index,FILE *index2,FILE *indexA, int user, Livro book, char *indexN,char*indexN2,char *indexN3)
 {
     INDEX indstr[tam];
-    int quant_reg=0;
+    AUTHOR indA[tam];
+    int quant_reg=0,AUTHORcont=0;
     int regSize,list,i,rrnatual;
 
     bufferindex(index,&quant_reg,indstr);
+    
+
+    
+
     getch();
     rewind(fil);
      /**/
@@ -312,6 +343,7 @@ void insertRegister(FILE* fil,FILE *index, int user, Livro book, char *indexN)
      quant_reg++;
      rrnatual = quant_reg;
     orderIndex(indstr,rrnatual);
+
     rewind(index);
     
     fwrite(&quant_reg,sizeof(int),1,index); 
@@ -320,9 +352,11 @@ void insertRegister(FILE* fil,FILE *index, int user, Livro book, char *indexN)
         fwrite(indstr[i].ISBN,sizeof(indstr[i].ISBN),1,index);
         fwrite(&indstr[i].RRN,sizeof(indstr[i].RRN),1,index);
         fputc('|',index);
-        printf("%s  %d \n",indstr[i].ISBN,indstr[i].RRN);
+        //printf("%s  %d \n",indstr[i].ISBN,indstr[i].RRN);
 
     }
+
+    
     rewind(fil);
 	fread(&list,sizeof(int),1,fil);//Recebe primeiro inteiro do arquivo que indica a quantidade de registros do arquivo de dados
     fseek(fil,SEEK_END,SEEK_CUR); //Rola para o fim do arquivo atual
@@ -469,7 +503,7 @@ int get_field(char *p_registro, int *p_pos, char *p_campo)
     return strlen(p_campo);
 }
 
-void read_booklist(FILE *fil,FILE *index,FILE *bklist, char *indexN)
+void read_booklist(FILE *fil,FILE *index,FILE *index2, FILE *indexA,FILE *bklist, char *indexN,char *indexN2,char *indexN3)
 {
 
     Livro book;
@@ -481,7 +515,7 @@ void read_booklist(FILE *fil,FILE *index,FILE *bklist, char *indexN)
         fread(book.title,sizeof(book.title),1,bklist);
         fread(book.author,sizeof(book.author),1,bklist);
         fread(book.year,sizeof(book.year),1,bklist);
-        insertRegister(fil,index,0,book,indexN);
+        insertRegister(fil,index,index2,indexA,0,book,indexN,indexN2,indexN3);
 
 		print_book(book);
 
@@ -658,4 +692,20 @@ void bufferindex(FILE *index, int *quantd_reg, INDEX *indstr){
         fseek(index,1,SEEK_CUR);           
     }
     
+}
+
+void bufferindexA(FILE *indexA, int *quantd,AUTHOR *LIST){
+    int i=0;
+    fread(quantd,sizeof(int),1,indexA);
+
+    while(i<*quantd){
+
+        fread(LIST[i].NAME,sizeof(LIST[i].NAME),1,indexA);
+        fread(LIST[i].RRN,sizeof(LIST[i].RRN),1,indexA);
+
+    }
+
+
+
+
 }
