@@ -31,7 +31,7 @@ void print_book(Livro book);
 int positInfile(FILE *fil, int position, int offset);
 void orderIndex(INDEX *indexstr,int quantd_reg);
 void searchByindex(FILE *fil, FILE *index , char *ISBN);
-INDEX *bufferindex(FILE *index);
+void bufferindex(FILE *index, int *quantd_reg, INDEX *indstr);
 
 
 int main()
@@ -264,20 +264,10 @@ void dumpFile(FILE *fil)
 void insertRegister(FILE* fil,FILE *index, int user, Livro book, char *indexN)
 {
     INDEX indstr[tam];
+    int quant_reg=0;
+    int regSize,list,i,rrnatual;
 
-    int regSize,list,quant_reg,i,rrnatual;
-   
-    rewind(index);
-    fread(&quant_reg,sizeof(int),1,index);
-    printf("  %d  \n",quant_reg);//lê quantidade de registros presentes no INDEX
-    /* FOR usado pra carregar o vetor de struct de indices*/
-    for(i=0;i<quant_reg;i++){
-        fread(indstr[i].ISBN,sizeof(indstr[i].ISBN),1,index);
-        fread(&indstr[i].RRN,sizeof(indstr[i].RRN),1,index); 
-        /*printtest*/
-        
-        fseek(index,1,SEEK_CUR);           
-    }
+    bufferindex(index,&quant_reg,indstr);
     getch();
     rewind(fil);
      /**/
@@ -562,8 +552,24 @@ void searchByindex(FILE *fil, FILE *index , char *ISBN){
     
 }
 
-INDEX *bufferindex(FILE *index){
+void bufferindex(FILE *index, int *quantd_reg, INDEX *indstr){
 
     
+    int i;
 
+    
+   
+    rewind(index);
+    fread(quantd_reg,sizeof(int),1,index);
+    
+    printf("loaded  %d registers \n",*quantd_reg);//lê quantidade de registros presentes no INDEX
+    /* FOR usado pra carregar o vetor de struct de indices*/
+    for(i=0;i<*quantd_reg;i++){
+        fread(indstr[i].ISBN,sizeof(indstr[i].ISBN),1,index);
+        fread(&indstr[i].RRN,sizeof(indstr[i].RRN),1,index); 
+        /*printtest*/
+        
+        fseek(index,1,SEEK_CUR);           
+    }
+    
 }
