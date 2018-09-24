@@ -42,7 +42,7 @@ int positInfile(FILE *fil, int position, int offset);
 void orderIndex(INDEX *indexstr,int quantd_reg);
 void searchByindex(FILE *fil, FILE *index);
 void bufferindex(FILE *index, int *quantd_reg, INDEX *indstr);
-void bufferindexA(FILE *indexA, int *quantd,AUTHOR *LIST);
+void bufferindexA(FILE *indexA,FILE *index2, int *quantd,int *quant_reg,AUTHOR *LIST, INDEX *list);
 
 int main()
 {
@@ -69,7 +69,7 @@ int main()
             if(file)
             {
 
-                insertRegister(file,index,index2,indexA,1,book,indexs,index2,indexs3);
+                insertRegister(file,index,index2,indexA,1,book,indexs,indexs2,indexs3);
                 break;
             }
             system("cls");
@@ -301,13 +301,14 @@ void dumpFile(FILE *fil)
 
 void insertRegister(FILE* fil,FILE *index,FILE *index2,FILE *indexA, int user, Livro book, char *indexN,char*indexN2,char *indexN3)
 {
-    INDEX indstr[tam];
+    INDEX indstr[tam],indlist[tam];
     AUTHOR indA[tam];
-    int quant_reg=0,AUTHORcont=0;
+    int quant_reg=0,quant_A=0,AUTHORcont=0;
     int regSize,list,i,rrnatual;
 
     bufferindex(index,&quant_reg,indstr);
-    
+    bufferindexA(indexA,index2,&quant_A,&quant_reg,indA,indlist);
+
 
     
 
@@ -320,16 +321,25 @@ void insertRegister(FILE* fil,FILE *index,FILE *index2,FILE *indexA, int user, L
     index = fopen(indexN,"wb");
     fclose(index);
     index = fopen(indexN,"a+b");
+    fclose(indexA);
+    index = fopen(indexN2,"wb");
+    fclose(indexA);
+    index = fopen(indexN2,"a+b");
+    fclose(index2);
+    index = fopen(indexN3,"wb");
+    fclose(index2);
+    index = fopen(indexN3,"a+b");
     
 
 
 
 
     if(user)
-    {
-		system("cls");
-        printf("ISBN:");
-        gets(book.ISBN);
+    {   do{
+		    system("cls");
+            printf("ISBN:");
+            gets(book.ISBN);
+        }while(strlen(book.ISBN !=13));
         printf("\nTitle:");
         gets(book.title);
         printf("\nAuthor:");
@@ -338,6 +348,9 @@ void insertRegister(FILE* fil,FILE *index,FILE *index2,FILE *indexA, int user, L
         gets(book.year);
     }
     regSize=strlen(book.ISBN) + strlen(book.author) + strlen(book.title) +strlen(book.year); // Soma de todos os tamanhos de strings da STRUCT
+    
+    
+    
     strcpy(indstr[rrnatual].ISBN,book.ISBN);
     indstr[rrnatual].RRN = rrnatual;
      quant_reg++;
@@ -465,10 +478,6 @@ int searchRegister(FILE *fil,char *ISBN)
     }
     return count;
 }
-
-
-
-
 
 int pega_registro(FILE *p_out, char *p_reg)
 {
@@ -694,15 +703,28 @@ void bufferindex(FILE *index, int *quantd_reg, INDEX *indstr){
     
 }
 
-void bufferindexA(FILE *indexA, int *quantd,AUTHOR *LIST){
-    int i=0;
+void bufferindexA(FILE *indexA,FILE *index2, int *quantd,int *quant_reg,AUTHOR *LIST, INDEX *list){
+    int i=0,j=0,aux;
     fread(quantd,sizeof(int),1,indexA);
-
+  //leo
     while(i<*quantd){
 
         fread(LIST[i].NAME,sizeof(LIST[i].NAME),1,indexA);
-        fread(LIST[i].RRN,sizeof(LIST[i].RRN),1,indexA);
+        fread(&LIST[i].RRN,sizeof(LIST[i].RRN),1,indexA);
+            aux = LIST[i].RRN;
+        while(aux!=-1 && j<=*quant_reg){
 
+                positInfile(index2,LIST[i].RRN,17);
+                fread(list[j].ISBN,sizeof(list[j].ISBN),1,index2);
+                fread(&list[j].RRN,sizeof(list[j].RRN),1,index2);
+                aux = list[j].RRN;
+                j++;
+
+
+
+
+        }
+        i++;
     }
 
 
