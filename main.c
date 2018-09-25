@@ -166,7 +166,7 @@ int main()
 
                 rewind(bklist);
                 rewind(file);
-                read_booklist(file,index,index2,indexA,bklist,indexs,indexs2,indexs3);
+                read_booklist(file,index,index2,indexA,bklist,indexs,indexs3,indexs2);
                 fclose(bklist);
 
 
@@ -227,7 +227,7 @@ void openFile(FILE **fil,char *filname, char *stringmod)
     {
 
         printf("\ncreating %s",filname);
-        Sleep(1000);
+        Sleep(100);
 
 
 
@@ -237,7 +237,7 @@ void openFile(FILE **fil,char *filname, char *stringmod)
         printf(".");
        
         printf(".");
-        Sleep(500);
+      
 
         printf(".");
       
@@ -367,7 +367,7 @@ void insertRegister(FILE* fil,FILE *index,FILE *index2,FILE *indexA, int user, L
         strcpy(indA[quant_A-1].NAME,book.author);
         indA[quant_A-1].RRN = rrnatual;
         indlist[rrnatual].NEXT = -1;
-        strcmp(indlist[rrnatual].ISBN,book.ISBN);
+        strcpy(indlist[rrnatual].ISBN,book.ISBN);
 
     }else{
 
@@ -375,7 +375,7 @@ void insertRegister(FILE* fil,FILE *index,FILE *index2,FILE *indexA, int user, L
        aux =indA[i].RRN;
         indA[i].RRN = rrnatual;
         indlist[rrnatual].NEXT = aux;
-        strcmp(indlist[rrnatual].ISBN,book.ISBN);
+        strcpy(indlist[rrnatual].ISBN,book.ISBN);
 
     }
   //  ----------------------------------------------------------------------------------
@@ -399,7 +399,7 @@ void insertRegister(FILE* fil,FILE *index,FILE *index2,FILE *indexA, int user, L
         fwrite(&indstr[i].RRN,sizeof(indstr[i].RRN),1,index);
         fputc('|',index);
         fwrite(indlist[i].ISBN,sizeof(indlist[i].ISBN),1,index2);
-        fwrite(&indlist[i].RRN,sizeof(indlist[i].RRN),1,index2);
+        fwrite(&indlist[i].NEXT,sizeof(int),1,index2);
         fputc('|',index2);
         //printf("%s  %d \n",indstr[i].ISBN,indstr[i].RRN);
                 
@@ -407,8 +407,8 @@ void insertRegister(FILE* fil,FILE *index,FILE *index2,FILE *indexA, int user, L
 
     for(i=0;i<quant_A;i++){
         
-        fwrite(indA[i].NAME,sizeof(char)*50,1,indexA);
-        fwrite(&indA[i].RRN,sizeof(int),1,indexA);
+       fwrite(&indA[i].NAME,sizeof(book.author),1,indexA);
+       fwrite(&indA[i].RRN,sizeof(int),1,indexA);
         
 
         
@@ -620,21 +620,21 @@ int positInfile(FILE *fil, int position,int offset){
 	int INTAUX,i=0,end;
 	rewind(fil);
 	fseek(fil,sizeof(int),SEEK_CUR);
-    
+    if(!offset){
         while(fread(&INTAUX,sizeof(int),1,fil)!=EOF && i<position){
 
             printf("skip INTAUX: %d\n",INTAUX);
-            if(!offset){
+            
                 fseek(fil,sizeof(char)*INTAUX,SEEK_CUR);
-                
-            }else{
-                fseek(fil,sizeof(char)*offset,SEEK_CUR);
-
-            }
+          
             i++;
 
         }
-   
+    }else{
+
+        for(i=0;i<position;i++) fseek(fil,sizeof(char)*offset,SEEK_CUR);
+        INTAUX = position * (offset);
+    }
     
 	
 
@@ -695,10 +695,6 @@ void searchByindex(FILE *fil, FILE *index){
                     tamcamp = get_field(reg,&pos,campo);
                     printf("Year: %s\n",campo);
 
-
-
-
-                    
                   
                     printf("\n\n\n Size: %d bytes",tamreg);
                     rewind(fil);
@@ -765,10 +761,12 @@ void bufferindexA(FILE *indexA,FILE *index2, int *quantd,int quant_reg,AUTHOR *L
             aux = LIST[i].RRN;
         while(aux!=-1 && j<quant_reg){
 
-                positInfile(index2,LIST[i].RRN,17);
+                positInfile(index2,aux,18);
+                 fseek(index2,1,SEEK_CUR); 
                 fread(list[j].ISBN,sizeof(list[j].ISBN),1,index2);
-                fread(&list[j].RRN,sizeof(list[j].RRN),1,index2);
-                aux = list[j].RRN;
+                fread(&list[j].NEXT,sizeof(list[j].NEXT),1,index2);
+                 
+                aux = list[j].NEXT;
                 j++;
 
 
