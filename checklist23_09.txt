@@ -1,0 +1,17 @@
+-Struct Author
+-Criar arquivo de authores 
+°Criar arquivos de lista invertidas
+°Modificar Insert File para inserir nos arquivos
+°Função de busca secundaria
+
+
+
+
+
+
+
+
+
+
+
+
