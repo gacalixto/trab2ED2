@@ -34,7 +34,7 @@ void openFile(FILE **fil,char *filname,char *stringmod);
 void insertRegister(FILE* fil,FILE *index,FILE *index2,FILE *indexA, int user, Livro book, char *indexN,char*indexN2,char *indexN3);
 void dumpFile(FILE *fil);
 void hashSfile(FILE *fil,int size_data,Livro book,int old);
-void read_booklist(FILE *fil,FILE *index,FILE *index2, FILE *indexA,FILE *bklist, char *indexN,char *indexN2,char *indexN3);
+void read_booklist(FILE *bklist,Livro *book);
 int searchRegister(FILE*fil,char *ISBN);
 char* init_string(char *str, char w, int tama);
 void print_book(Livro book);
@@ -51,7 +51,8 @@ int main()
     FILE *file=NULL,*bklist=NULL, *last,*index,*index2,*indexA;
     char filename[50], booklist[]="biblioteca.bin",lastfile[]="last.bin",defaultfile[]="library.bin";
     char indexs[20],a[10],indexs2[20],indexs3[20];
-    Livro book;
+    Livro book,bk[tam];
+    int i=0,opt,pos=-1;
 
     do
     {
@@ -59,21 +60,42 @@ int main()
         system("COLOR 0A");
         system("cls");
         printf("LIBRARY FILE MANAGER\n\n\n");
-        printf(" [1]-INSERT INTO FILE\n [2] - Search\n [3]-Search a register\n [4]-Load FILE\n [5]-Dump FILE \n [6]-Load Book List \n [r]-Open Last File\n [e]-Close FILE & exit \n");
+        printf(" [1]-INSERT INTO FILE\n [2] - Search\n [3]-Load FILE\n [4]-Dump FILE \n [5]-Load Book List \n [r]-Open Last File\n [e]-Close FILE & exit \n");
         opc=getch();
 
         switch(opc)
         {
         case '1':
+        fflush(stdin);
+            printf("Insert:[1]Manual or [2]using booklist\nType:");
+            scanf("%d",&opt);
 
-            if(file)
+
+            if(file&&opt==1)
             {
 
                 insertRegister(file,index,index2,indexA,1,book,indexs,indexs2,indexs3);
                 break;
             }
+            else if(file&&opt==2){
+                while(pos<0||pos>tam)
+                {
+                    printf("Which position you want to insert:");
+                    scanf("%d",&pos);
+
+                }
+                
+                book = bk[pos-1];
+                insertRegister(file,index,index2,indexA,0,book,indexs,indexs2,indexs3);
+
+            }
+             else if(!file)
+            {
+                printf("File is not defined!!\n\nPRESS ANY BUTTON");
+
+            }
             system("cls");
-            printf("File is not defined!!\n\nPRESS ANY BUTTON");
+           
             getch();
             break;
 
@@ -106,7 +128,7 @@ int main()
             system("cls");
             break;
             */
-        case '4':
+        case '3':
             system("cls");
             printf("FILE NAME: ");
             gets(filename);
@@ -140,7 +162,7 @@ int main()
             fclose(last);
             break;
 
-        case '5':
+        case '4':
             printf("FILE NAME: ");
             gets(filename);
             openFile(&file,filename,"a+b");
@@ -155,30 +177,25 @@ int main()
             fclose(file);
             break;
 
-        case '6':
+        case '5':
 
             system("cls");
 
             printf("FILE NAME (book list): ");
            
-            if((bklist=fopen(booklist,"rb"))!=NULL && file!=NULL)
+            if((bklist=fopen(booklist,"rb"))!=NULL)
             {
 
                 rewind(bklist);
                 rewind(file);
-                read_booklist(file,index,index2,indexA,bklist,indexs,indexs3,indexs2);
+                read_booklist(bklist,bk);
                 fclose(bklist);
-
-
-
-
-
 
             }
             else
             {
 
-                printf("List Not found or i/o file not found !! \n\n Press Any key...");
+                printf("List Not found!! \n\n Press Any key...");
 
                 getch();
 
@@ -309,7 +326,7 @@ void insertRegister(FILE* fil,FILE *index,FILE *index2,FILE *indexA, int user, L
     int regSize,list,i,rrnatual;
 
     bufferindex(index,&quant_reg,indstr);
-    bufferindexA(indexA,index2,&quant_A,quant_reg,indA,indlist);
+   // bufferindexA(indexA,index2,&quant_A,quant_reg,indA,indlist);
 
 
     
@@ -352,14 +369,16 @@ void insertRegister(FILE* fil,FILE *index,FILE *index2,FILE *indexA, int user, L
     regSize=strlen(book.ISBN) + strlen(book.author) + strlen(book.title) +strlen(book.year); // Soma de todos os tamanhos de strings da STRUCT
    
    //PROCURANDO NA LISTA DE AUTORES-----------------------------------
-    i=0;
+    /*i=0;
     while(i<quant_A && strcmp(book.author,indA[i].NAME)){
 
         i++;
 
 
     }
+    */
     quant_reg++;
+    /*
     if(i>=quant_A){
 
         quant_A++;
@@ -378,6 +397,7 @@ void insertRegister(FILE* fil,FILE *index,FILE *index2,FILE *indexA, int user, L
         strcpy(indlist[rrnatual].ISBN,book.ISBN);
 
     }
+    */
   //  ----------------------------------------------------------------------------------
     
     strcpy(indstr[rrnatual].ISBN,book.ISBN);
@@ -404,7 +424,7 @@ void insertRegister(FILE* fil,FILE *index,FILE *index2,FILE *indexA, int user, L
         //printf("%s  %d \n",indstr[i].ISBN,indstr[i].RRN);
                 
     }
-
+    /*
     for(i=0;i<quant_A;i++){
         
        fwrite(&indA[i].NAME,sizeof(book.author),1,indexA);
@@ -415,6 +435,7 @@ void insertRegister(FILE* fil,FILE *index,FILE *index2,FILE *indexA, int user, L
         //printf("%s  %d \n",indstr[i].ISBN,indstr[i].RRN);
 
     }
+    */
 
 
 
@@ -561,21 +582,20 @@ int get_field(char *p_registro, int *p_pos, char *p_campo)
     return strlen(p_campo);
 }
 
-void read_booklist(FILE *fil,FILE *index,FILE *index2, FILE *indexA,FILE *bklist, char *indexN,char *indexN2,char *indexN3)
+void read_booklist(FILE *bklist,Livro *book)
 {
-
-    Livro book;
+    int i=0;
+    
 	system("cls");
 	printf("Add BOOK \n\n");
-    while(	fread(book.ISBN,sizeof(book.ISBN),1,bklist) )
+    while(	fread(book[i].ISBN,sizeof(book[i].ISBN),1,bklist) )
     {
 
-        fread(book.title,sizeof(book.title),1,bklist);
-        fread(book.author,sizeof(book.author),1,bklist);
-        fread(book.year,sizeof(book.year),1,bklist);
-        insertRegister(fil,index,index2,indexA,0,book,indexN,indexN2,indexN3);
-
-		print_book(book);
+        fread(book[i].title,sizeof(book[i].title),1,bklist);
+        fread(book[i].author,sizeof(book[i].author),1,bklist);
+        fread(book[i].year,sizeof(book[i].year),1,bklist);
+		print_book(book[i]);
+        i++;
 
     }
 
@@ -647,24 +667,52 @@ int positInfile(FILE *fil, int position,int offset){
 }
 
 void searchByindex(FILE *fil, FILE *index){
-         char ISBN[13],reg[65],campo[50];
+        char ISBN[13],reg[65],campo[50],opc,ISBNs[tam][14];
         INDEX indstr[tam];
-        int quant_reg,i,flag=1,j,tamreg,tamcamp,pos=0;
+        int quant_reg,i,flag=1,j,tamreg,tamcamp,pos=0,p=-1;
         Livro book;
+        FILE *search_p;
         system("cls");
-        printf("Type the ISBN: ");
-        gets(ISBN);
+        printf("Type of search:[1]Manual or [2]using file:");
+        opc = getch(); 
+        switch(opc)
+        {
+            case'1':
+                    printf("Type the ISBN: ");
+                    gets(ISBN);
+                    break;
+            case '2':
+                    search_p=fopen("busca_p.bin","rb");//abre o aqruivo busca_p
+                    if(search_p)//se existe carrega num vetor de strings chamado ISBNs
+                    {
+                        i=0;
+                        while(fread(ISBNs[i],sizeof(ISBNs[i]),1,search_p))
+                        {
+                            printf("%s\n",ISBNs[i]);
+                            i++;
+                            getch();
+                         }
+                         while(p<0||p>tam)//verificação de qual posição do vetor vc quer pesquisar
+                         {
+                             printf("Which position:");
+                             scanf("%d",&p);
 
+                         }
+                         
+                         strcpy(ISBN,ISBNs[p-1]);
+
+                    }
+                    
+                    fclose(search_p);
+                    break;  
+
+
+        }
         bufferindex(index,&quant_reg,indstr);
-
         system("cls");
-
         printf("A - primary search \nB - Secondary search\n EXIT -  ANY KEY");
-
         switch(toupper(getch())){
-
             case 'A':
-
                 i=0;
                 while(i<quant_reg && flag ) {
 
@@ -695,7 +743,7 @@ void searchByindex(FILE *fil, FILE *index){
                     tamcamp = get_field(reg,&pos,campo);
                     printf("Year: %s\n",campo);
 
-                  
+                
                     printf("\n\n\n Size: %d bytes",tamreg);
                     rewind(fil);
                     
@@ -720,10 +768,6 @@ void searchByindex(FILE *fil, FILE *index){
 
 
         }
-
-
-
-    
 }
 
 void bufferindex(FILE *index, int *quantd_reg, INDEX *indstr){
