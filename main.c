@@ -40,9 +40,10 @@ char* init_string(char *str, char w, int tama);
 void print_book(Livro book);
 int positInfile(FILE *fil, int position, int offset);
 void orderIndex(INDEX *indexstr,int quantd_reg);
-void searchByindex(FILE *fil, FILE *index);
+void searchByindex(FILE *fil, FILE *index,FILE *index2,FILE *indexA);
 void bufferindex(FILE *index, int *quantd_reg, INDEX *indstr);
 void bufferindexA(FILE *indexA,FILE *index2, int *quantd,int quant_reg,AUTHOR *LIST, INDEX *list);
+void printbyindex(FILE *fil,FILE *index, char *ISBN);
 
 int main()
 {
@@ -102,7 +103,7 @@ int main()
             system("cls");
           if(file && index){
 
-            searchByindex(file,index);
+            searchByindex(file,index,index2,indexA);
           }else{
 
               printf("Please Open File...");
@@ -445,7 +446,7 @@ void insertRegister(FILE* fil,FILE *index,FILE *index2,FILE *indexA, int user, L
     hashSfile(fil,regSize,book,0);
     rewind(index);
     rewind(fil);
-    printf("Livro Salvo\n !!\a");
+    printf("\n\nLivro Salvo\n !!\a");
     return;
 }
 
@@ -465,7 +466,8 @@ void orderIndex(INDEX *indexstr,int quantd_reg){
 
           }      
         }
-    for(i=0;i<quantd_reg;i++) printf("%s",indexstr[i].ISBN);
+    
+    for(i=0;i<quantd_reg;i++) printf("\n'%s'",indexstr[i].ISBN);
     getch();
 }
 
@@ -665,10 +667,12 @@ int positInfile(FILE *fil, int position,int offset){
 
 }
 
-void searchByindex(FILE *fil, FILE *index){
-        char ISBN[13],reg[65],campo[50],opc,ISBNs[tam][14];
+void searchByindex(FILE *fil, FILE *index,FILE *index2,FILE *indexA){
+        char ISBN[13],reg[65],campo[50],opc,ISBNs[tam][14],A[50];
+        AUTHOR listA[tam];
+        INDEX listI[tam];
         INDEX indstr[tam];
-        int quant_reg,i,flag=1,j,tamreg,tamcamp,pos=0,p=-1;
+        int quant_reg,i,flag=1,j,tamreg,tamcamp,pos=0,p=-1,quant_A,aux;
         Livro book;
         FILE *search_p;
         system("cls");
@@ -677,96 +681,98 @@ void searchByindex(FILE *fil, FILE *index){
         switch(opc)
         {
             case'1':
-                    printf("Type the ISBN: ");
-                    gets(ISBN);
-                    break;
-            case '2':
-                    search_p=fopen("busca_p.bin","rb");//abre o aqruivo busca_p
-                    if(search_p)//se existe carrega num vetor de strings chamado ISBNs
-                    {
-                        i=0;
-                        while(fread(ISBNs[i],sizeof(ISBNs[i]),1,search_p))
-                        {
-                            printf("%s\n",ISBNs[i]);
-                            i++;
-                            getch();
-                         }
-                         while(p<0||p>tam)//verificação de qual posição do vetor vc quer pesquisar
-                         {
-                             printf("Which position:");
-                             scanf("%d",&p);
-
-                         }
-                         
-                         strcpy(ISBN,ISBNs[p-1]);
-
-                    }
-                    
-                    fclose(search_p);
-                    break;  
-
-
-        }
-        bufferindex(index,&quant_reg,indstr);
-        system("cls");
-        printf("A - primary search \nB - Secondary search\n EXIT -  ANY KEY");
-        switch(toupper(getch())){
-            case 'A':
-                i=0;
-                while(i<quant_reg && flag ) {
-
-                    flag=strcmp(ISBN,indstr[i].ISBN);
-                    j=i;
-                    i++;
-
-                }
                 system("cls");
-                if(!flag) {
+                 printf("Type of search:[1]Primary or [2]secondary:");
 
+                    switch(toupper(getch())){
+
+                        case'1':
+                            printf("\n\nType the ISBN: ");
+                            gets(ISBN);
+                             printbyindex(fil,index,ISBN);
+                        break;
+
+                        case'2':
+                            bufferindexA(indexA,index2,&quant_A,quant_reg,listA,listI);
+                            i=0;
+                            system("cls");
+                            printf("Type an author: ");
+                            gets(A);
+                            printf("\n\nloaded %d authors \n",quant_A);
+                            while(i<quant_A && strcmp(A,listA[i].NAME)){
+
+                                    i++;
+
+                            }
+                            if(i<quant_A){
+
+                                aux = listA[i].RRN;
+
+                                while(aux!=-1){
+                                    printbyindex(fil,index,listI[aux].ISBN);
+                                    aux = listI[aux].NEXT;
+                                }
+
+
+                            }else{
+                                getch();
+                                system("cls");
+                                printf("Author not found");
+
+                            }
+
+                        break;
                     
-                    positInfile(fil,indstr[j].RRN,0);
-                    fseek(fil,-4,SEEK_CUR);
-
-                    
-                    
-                    tamreg = pega_registro(fil,reg);
-                    
-                    system("cls");
-                    pos = 0;
-                    tamcamp = get_field(reg,&pos,campo);
-                    printf("ISBN: %s\n",campo);
-                    tamcamp = get_field(reg,&pos,campo);
-                    printf("Title: %s\n",campo);
-                    tamcamp = get_field(reg,&pos,campo);
-                    printf("Author: %s\n",campo);
-                    tamcamp = get_field(reg,&pos,campo);
-                    printf("Year: %s\n",campo);
-
-                
-                    printf("\n\n\n Size: %d bytes",tamreg);
-                    rewind(fil);
-                    
-
-                }else{
-
-                    printf("Book Not Found");
-
-                }
-
-
+                    }
             break;
+            case '2':
+                 system("cls");
+                 printf("Type of search:[1]Primary or [2]secondary:");
 
-            case 'B':
+                    switch(toupper(getch())){
 
-                //SECONDARY SEARCH;
+                        case'1':
+                            search_p=fopen("busca_p.bin","rb");//abre o aqruivo busca_p
+                            if(search_p)//se existe carrega num vetor de strings chamado ISBNs
+                            {
+                                i=0;
+                                while(fread(ISBNs[i],sizeof(ISBNs[i]),1,search_p))
+                                {
+                                    printf("\n[%d] - '%s'\n",i+1,ISBNs[i]);
+                                    i++;
+                                   
+                                }
 
-            break;
+                                while(p<0||p>tam)//verificação de qual posição do vetor vc quer pesquisar
+                                {
+                                    printf("Which position:");
+                                    scanf("%d",&p);
 
+                                }
+                                
+                                strcpy(ISBN,ISBNs[p-1]);
 
+                            }
+                            
+                            fclose(search_p);
 
+                            printbyindex(fil,index,ISBN);
+                        break;
+
+                        case'2':
+                        //busca vinda de um arquivo
+                        break;
+                    
+                    }
+
+                break;  
 
 
         }
+      
+
+    printf("\n\nPress any key to exit...")
+        getch();
 }
 
 void bufferindex(FILE *index, int *quantd_reg, INDEX *indstr){
@@ -819,6 +825,67 @@ void bufferindexA(FILE *indexA,FILE *index2, int *quantd,int quant_reg,AUTHOR *L
         }
         i++;
     }
+
+
+
+
+}
+
+void printbyindex(FILE *fil,FILE *index, char *ISBN){
+
+         char reg[65],campo[50],opc,ISBNs[tam][14],A[50];
+        INDEX indstr[tam];
+        int quant_reg,i,flag=1,j,tamreg,tamcamp,pos=0,p=-1,quant_A;
+        Livro book;
+        FILE *search_p;
+        
+
+             bufferindex(index,&quant_reg,indstr);
+       
+       
+                i=0;
+                while(i<quant_reg && flag ) {
+
+                    flag=strcmp(ISBN,indstr[i].ISBN);
+                    j=i;
+                    i++;
+
+                }
+                system("cls");
+                if(!flag) {
+
+                    
+                    positInfile(fil,indstr[j].RRN,0);
+                    fseek(fil,-4,SEEK_CUR);
+
+                    
+                    
+                    tamreg = pega_registro(fil,reg);
+                    
+                    system("cls");
+                    pos = 0;
+                    tamcamp = get_field(reg,&pos,campo);
+                    printf("ISBN: %s\n",campo);
+                    tamcamp = get_field(reg,&pos,campo);
+                    printf("Title: %s\n",campo);
+                    tamcamp = get_field(reg,&pos,campo);
+                    printf("Author: %s\n",campo);
+                    tamcamp = get_field(reg,&pos,campo);
+                    printf("Year: %s\n",campo);
+
+                
+                    printf("\n\n\n Size: %d bytes",tamreg);
+                    rewind(fil);
+                    
+
+                }else{
+
+                    printf("Book Not Found");
+
+                }
+
+
+            
 
 
 
