@@ -712,7 +712,7 @@ void searchByindex(FILE *fil, FILE *index,FILE *index2,FILE *indexA){
                                     printbyindex(fil,index,listI[aux].ISBN);
                                     aux = listI[aux].NEXT;
                                 }
-
+                                
 
                             }else{
                                 getch();
@@ -771,7 +771,7 @@ void searchByindex(FILE *fil, FILE *index,FILE *index2,FILE *indexA){
         }
       
 
-    printf("\n\nPress any key to exit...")
+    printf("\n\nPress any key to exit...");
         getch();
 }
 
@@ -851,7 +851,7 @@ void printbyindex(FILE *fil,FILE *index, char *ISBN){
                     i++;
 
                 }
-                system("cls");
+               printf("\n");
                 if(!flag) {
 
                     
