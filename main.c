@@ -67,23 +67,22 @@ int main()
         {
         case '1':
         fflush(stdin);
-            printf("Insert:[1]Manual or [2]using booklist\nType:");
-            scanf("%d",&opt);
+            printf("Insert:[1]Manual or [2]using booklist\nType");
+            opt = getch();
 
 
-            if(file&&opt==1)
+            if(file&&opt=='1')
             {
 
                 insertRegister(file,index,index2,indexA,1,book,indexs,indexs2,indexs3);
                 break;
             }
-            else if(file&&opt==2){
-                while(pos<0||pos>tam)
-                {
-                    printf("Which position you want to insert:");
+            else if(file&&opt=='2'){
+               do{
+                    printf("\nWhich position you want to insert:");
                     scanf("%d",&pos);
 
-                }
+                }while(pos>3 || pos<1);
                 
                 book = bk[pos-1];
                 insertRegister(file,index,index2,indexA,0,book,indexs,indexs2,indexs3);
@@ -326,7 +325,7 @@ void insertRegister(FILE* fil,FILE *index,FILE *index2,FILE *indexA, int user, L
     int regSize,list,i,rrnatual;
 
     bufferindex(index,&quant_reg,indstr);
-   // bufferindexA(indexA,index2,&quant_A,quant_reg,indA,indlist);
+    bufferindexA(indexA,index2,&quant_A,quant_reg,indA,indlist);
 
 
     
@@ -369,16 +368,16 @@ void insertRegister(FILE* fil,FILE *index,FILE *index2,FILE *indexA, int user, L
     regSize=strlen(book.ISBN) + strlen(book.author) + strlen(book.title) +strlen(book.year); // Soma de todos os tamanhos de strings da STRUCT
    
    //PROCURANDO NA LISTA DE AUTORES-----------------------------------
-    /*i=0;
+    i=0;
     while(i<quant_A && strcmp(book.author,indA[i].NAME)){
 
         i++;
 
 
     }
-    */
+    
     quant_reg++;
-    /*
+    
     if(i>=quant_A){
 
         quant_A++;
@@ -397,7 +396,7 @@ void insertRegister(FILE* fil,FILE *index,FILE *index2,FILE *indexA, int user, L
         strcpy(indlist[rrnatual].ISBN,book.ISBN);
 
     }
-    */
+    
   //  ----------------------------------------------------------------------------------
     
     strcpy(indstr[rrnatual].ISBN,book.ISBN);
@@ -424,7 +423,7 @@ void insertRegister(FILE* fil,FILE *index,FILE *index2,FILE *indexA, int user, L
         //printf("%s  %d \n",indstr[i].ISBN,indstr[i].RRN);
                 
     }
-    /*
+    
     for(i=0;i<quant_A;i++){
         
        fwrite(&indA[i].NAME,sizeof(book.author),1,indexA);
@@ -435,7 +434,7 @@ void insertRegister(FILE* fil,FILE *index,FILE *index2,FILE *indexA, int user, L
         //printf("%s  %d \n",indstr[i].ISBN,indstr[i].RRN);
 
     }
-    */
+    
 
 
 
@@ -804,10 +803,11 @@ void bufferindexA(FILE *indexA,FILE *index2, int *quantd,int quant_reg,AUTHOR *L
         fread(&LIST[i].RRN,sizeof(LIST[i].RRN),1,indexA);
             aux = LIST[i].RRN;
         while(aux!=-1 && j<quant_reg){
-
-                positInfile(index2,aux,18);
-                 fseek(index2,1,SEEK_CUR); 
+                
+                positInfile(index2,aux,19);
+                 //fseek(index2,1,SEEK_CUR); 
                 fread(list[j].ISBN,sizeof(list[j].ISBN),1,index2);
+                //fseek(index2,1,SEEK_CUR); 
                 fread(&list[j].NEXT,sizeof(list[j].NEXT),1,index2);
                  
                 aux = list[j].NEXT;
