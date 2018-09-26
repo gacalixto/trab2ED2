@@ -862,7 +862,7 @@ void printbyindex(FILE *fil,FILE *index, char *ISBN){
                     
                     tamreg = pega_registro(fil,reg);
                     
-                    system("cls");
+                    
                     pos = 0;
                     tamcamp = get_field(reg,&pos,campo);
                     printf("ISBN: %s\n",campo);
